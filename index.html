@@ -1,35 +1,127 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Miles Before WiFi</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Miles Before WiFi | Community of Strangers</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-<header>
-<h1>Miles Before WiFi</h1>
-<p>A Community of Strangers. Connections That Last.</p>
+
+<header class="site-header">
+  <div class="brand">
+    <img src="assets/logo.jpg" alt="Miles Before WiFi Logo" class="logo" />
+    <div>
+      <h1>Miles Before WiFi</h1>
+      <p>A Community of Strangers. Connections That Last.</p>
+    </div>
+  </div>
+
+  <nav>
+    <a href="#about">About</a>
+    <a href="#activities">Activities</a>
+    <a href="#trips">Trips</a>
+    <a href="#safety">Safety</a>
+    <a href="#join">Join</a>
+  </nav>
 </header>
 
-<nav>
-<a href="#about">About</a>
-<a href="#events">Events</a>
-<a href="#trips">Trips</a>
-<a href="#join">Join</a>
-<a href="#contact">Contact</a>
-</nav>
-
 <section class="hero">
-<h2>Meet. Explore. Belong.</h2>
-<p>Join a community built around friendships, travel, board games and unforgettable experiences.</p>
-<button onclick="joinCommunity()">Join Community</button>
+  <div class="hero-content">
+    <span class="badge">Meet • Travel • Play • Connect</span>
+    <h2>Turn strangers into travel friends.</h2>
+    <p>
+      Join meetups, trips, board games, campfire conversations and fun community activities
+      built for real-world friendships beyond WiFi.
+    </p>
+    <div class="hero-actions">
+      <a href="#join" class="btn primary">Join Community</a>
+      <a href="#activities" class="btn secondary">Explore Activities</a>
+    </div>
+  </div>
+  <div class="hero-logo-wrap">
+    <img src="assets/logo.jpg" alt="Miles Before WiFi Logo" class="hero-logo" />
+  </div>
 </section>
 
-<section id="about">
-<h2>About Us</h2>
-<p>Miles Before WiFi helps people connect beyond screens.</p>
+<section id="about" class="section">
+  <h2>About Us</h2>
+  <p>
+    Miles Before WiFi is a social travel and activity community where people meet new friends,
+    explore places together and create meaningful memories through shared experiences.
+  </p>
 </section>
+
+<section id="activities" class="section">
+  <h2>What We Do</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>🤝 Meet New Friends</h3>
+      <p>Friendly meetups for conversations, networking and real connections.</p>
+    </div>
+    <div class="card">
+      <h3>🌄 Trips & Travel</h3>
+      <p>Weekend trips, nature escapes, camping, trekking and city experiences.</p>
+    </div>
+    <div class="card">
+      <h3>🎲 Board Games</h3>
+      <p>Game nights, fun challenges and indoor social activities.</p>
+    </div>
+  </div>
+</section>
+
+<section id="trips" class="section trip-section">
+  <h2>Upcoming Experiences</h2>
+  <div class="trip-list">
+    <div>
+      <h3>Weekend Travel</h3>
+      <p>Short trips with verified members and clear itineraries.</p>
+    </div>
+    <div>
+      <h3>Social Meetups</h3>
+      <p>Cafe meets, city walks and community bonding sessions.</p>
+    </div>
+    <div>
+      <h3>Fun Activities</h3>
+      <p>Board games, team games, icebreakers and group challenges.</p>
+    </div>
+  </div>
+</section>
+
+<section id="safety" class="section">
+  <h2>Safety First</h2>
+  <div class="safety-grid">
+    <p>✅ Community guidelines</p>
+    <p>✅ Respectful behaviour policy</p>
+    <p>✅ Emergency contact collection</p>
+    <p>✅ Clear trip rules and payment policy</p>
+  </div>
+</section>
+
+<section id="join" class="section join-section">
+  <h2>Join Miles Before WiFi</h2>
+  <p>Be part of our next meetup, trip or fun activity.</p>
+
+  <form onsubmit="submitForm(event)">
+    <input type="text" placeholder="Full Name" required />
+    <input type="email" placeholder="Email Address" required />
+    <input type="tel" placeholder="WhatsApp Number" />
+    <select>
+      <option>Interested In</option>
+      <option>Meetups</option>
+      <option>Trips</option>
+      <option>Board Games</option>
+      <option>All Activities</option>
+    </select>
+    <textarea placeholder="Tell us about yourself"></textarea>
+    <button type="submit">Submit Interest</button>
+  </form>
+</section>
+
+<footer>
+  <p>© 2026 Miles Before WiFi. All Rights Reserved.</p>
+  <p>Instagram: @milesbeforewifi | Email: hello@milesbeforewifi.com</p>
+</footer>
 
 <script src="script.js"></script>
 </body>
