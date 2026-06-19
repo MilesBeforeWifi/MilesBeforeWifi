@@ -1,0 +1,1 @@
+function joinCommunity(){alert('Welcome to Miles Before WiFi!');}
