@@ -1,128 +1,970 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Miles Before WiFi | Community of Strangers</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Miles Before WiFi – Brochure Generator</title>
+
+<!-- External Libraries (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+  /* ============================================================
+     TOKENS
+     Forest green  #2D5016
+     Sage          #4A7C2F
+     Beige         #F5EDD8
+     Warm cream    #FBF7EE
+     Campfire      #E8601C
+     Ember         #C44D12
+     Charcoal      #1C1C1C
+     Muted text    #5A5A4A
+  ============================================================ */
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green:   #2D5016;
+    --sage:    #4A7C2F;
+    --beige:   #F5EDD8;
+    --cream:   #FBF7EE;
+    --orange:  #E8601C;
+    --ember:   #C44D12;
+    --charcoal:#1C1C1C;
+    --muted:   #5A5A4A;
+    --radius:  10px;
+    --shadow:  0 4px 24px rgba(45,80,22,.13);
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--charcoal);
+    min-height: 100vh;
+  }
+
+  /* ── Top Bar ─────────────────────────────────────────────── */
+  .topbar {
+    background: var(--green);
+    color: var(--beige);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.25);
+  }
+  .topbar-icon { font-size: 1.6rem; }
+  .topbar h1  { font-size: 1.2rem; font-weight: 700; letter-spacing: .5px; }
+  .topbar p   { font-size: .75rem; opacity: .75; margin-top: 1px; }
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  .layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 60px);
+  }
+
+  /* ── Form Panel ──────────────────────────────────────────── */
+  .form-panel {
+    background: #fff;
+    border-right: 2px solid var(--beige);
+    padding: 24px 20px 32px;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: calc(100vh - 60px);
+  }
+
+  .form-panel h2 {
+    font-size: .85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--sage);
+    margin-bottom: 18px;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #ddd;
+    border-radius: var(--radius);
+    font-size: .88rem;
+    font-family: inherit;
+    color: var(--charcoal);
+    background: var(--cream);
+    transition: border-color .2s;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    border-color: var(--sage);
+    background: #fff;
+  }
+  .field .hint {
+    font-size: .7rem;
+    color: #999;
+    margin-top: 3px;
+  }
+
+  /* Image upload */
+  .upload-box {
+    border: 2px dashed #ccc;
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--cream);
+    transition: border-color .2s, background .2s;
+  }
+  .upload-box:hover { border-color: var(--sage); background: #f0f5ec; }
+  .upload-box input[type="file"] { display: none; }
+  .upload-box .upload-label {
+    font-size: .8rem;
+    color: var(--sage);
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+  .upload-box .upload-label span { font-size: 1.4rem; }
+  .upload-preview {
+    max-width: 100%;
+    max-height: 80px;
+    border-radius: 6px;
+    margin-top: 8px;
+    display: none;
+    object-fit: contain;
+  }
+
+  /* Generate button */
+  .btn-generate {
+    width: 100%;
+    padding: 13px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .4px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background .2s, transform .1s;
+  }
+  .btn-generate:hover { background: var(--ember); }
+  .btn-generate:active { transform: scale(.98); }
+
+  /* Divider */
+  .divider {
+    border: none;
+    border-top: 1.5px solid var(--beige);
+    margin: 18px 0;
+  }
+
+  /* ── Preview Panel ───────────────────────────────────────── */
+  .preview-panel {
+    padding: 32px 24px;
+    background: #e8e4dc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+  }
+
+  .preview-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 540px;
+    margin-bottom: 20px;
+  }
+  .preview-panel .panel-header h2 {
+    font-size: .85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+  }
+
+  /* Download buttons */
+  .dl-btns { display: flex; gap: 10px; }
+  .btn-dl {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-dl:hover   { opacity: .88; }
+  .btn-dl:active  { transform: scale(.97); }
+  .btn-dl.png     { background: var(--green); color: #fff; }
+  .btn-dl.pdf     { background: var(--charcoal); color: #fff; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+  .empty-state p { font-size: .9rem; }
+
+  /* ============================================================
+     BROCHURE  (A4-ish at 540px wide)
+  ============================================================ */
+  #brochure {
+    width: 540px;
+    background: var(--beige);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.22);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    display: none;                 /* shown after Generate */
+  }
+
+  /* --- Brochure: Header --- */
+  .br-header {
+    background: var(--green);
+    padding: 20px 28px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .br-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--orange);
+    flex-shrink: 0;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    overflow: hidden;
+  }
+  .br-logo img { width: 100%; height: 100%; object-fit: cover; }
+  .br-brand { flex: 1; min-width: 0; }
+  .br-brand-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--beige);
+    letter-spacing: .5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .br-brand-tag {
+    font-size: .72rem;
+    color: var(--orange);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+
+  /* --- Brochure: Hero --- */
+  .br-hero {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+    background: #bbb;
+    position: relative;
+  }
+  .br-hero-wrap {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+  }
+  .br-hero-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .br-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 40%, rgba(45,80,22,.55) 100%);
+  }
+  .br-hero-placeholder {
+    width: 100%;
+    height: 220px;
+    background: linear-gradient(135deg, #4A7C2F 0%, #2D5016 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,.3);
+    font-size: 3rem;
+  }
+
+  /* --- Brochure: Body --- */
+  .br-body { padding: 24px 28px; }
+
+  .br-headline {
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: var(--green);
+    line-height: 1.25;
+    margin-bottom: 10px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    /* max 3 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .br-desc {
+    font-size: .88rem;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 20px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    /* max 4 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Details grid */
+  .br-details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .br-detail-item {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--orange);
+  }
+  .br-detail-item .detail-icon { font-size: .95rem; }
+  .br-detail-item .detail-label {
+    font-size: .62rem;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: #999;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .br-detail-item .detail-val {
+    font-size: .82rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    /* max 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Highlights */
+  .br-section-title {
+    font-size: .7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--orange);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .br-section-title::after {
+    content: '';
+    flex: 1;
+    height: 1.5px;
+    background: var(--orange);
+    opacity: .25;
+  }
+
+  .br-highlights {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 20px;
+  }
+  .br-highlight-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: .84rem;
+    color: var(--charcoal);
+    line-height: 1.4;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  .br-highlight-item .hl-dot {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--sage);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 800;
+    margin-top: 1px;
+  }
+
+  /* Price + QR row */
+  .br-price-qr {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    align-items: stretch;
+  }
+
+  .br-price-card {
+    flex: 1;
+    background: var(--green);
+    color: #fff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .br-price-card .price-label {
+    font-size: .65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: .7;
+    font-weight: 700;
+  }
+  .br-price-card .price-val {
+    font-size: 2rem;
+    font-weight: 900;
+    line-height: 1.1;
+    margin: 6px 0 4px;
+    word-break: break-all;
+  }
+  .br-price-card .price-seats {
+    font-size: .75rem;
+    opacity: .8;
+    font-weight: 600;
+  }
+
+  .br-qr-block {
+    width: 120px;
+    flex-shrink: 0;
+    background: #fff;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border: 2px dashed #ddd;
+    text-align: center;
+  }
+  .br-qr-block .qr-icon { font-size: 2.2rem; }
+  .br-qr-block .qr-label {
+    font-size: .62rem;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-top: 6px;
+    line-height: 1.3;
+  }
+
+  /* Footer */
+  .br-footer {
+    background: var(--charcoal);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .br-footer-contact {
+    font-size: .78rem;
+    color: var(--beige);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    word-break: break-all;
+  }
+  .br-footer-insta {
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    word-break: break-all;
+  }
+
+  /* ── Responsive ──────────────────────────────────────────── */
+  @media (max-width: 960px) {
+    .layout { grid-template-columns: 1fr; }
+    .form-panel { height: auto; position: static; }
+    .preview-panel { padding: 20px 12px; }
+    #brochure { width: 100%; max-width: 540px; }
+    .panel-header { max-width: 100% !important; }
+  }
+
+  @media (max-width: 560px) {
+    #brochure { border-radius: 10px; }
+    .br-header  { padding: 14px 16px; gap: 10px; }
+    .br-body    { padding: 16px; }
+    .br-footer  { padding: 14px 16px; }
+    .br-details { grid-template-columns: 1fr; }
+    .br-price-qr { flex-direction: column; }
+    .br-qr-block { width: 100%; flex-direction: row; gap: 12px; height: auto; padding: 14px; }
+  }
+</style>
 </head>
 <body>
 
-<header class="site-header">
-  <div class="brand">
-    <img src="assets/logo.jpg" alt="Miles Before WiFi Logo" class="logo" />
-    <div>
-      <h1>Miles Before WiFi</h1>
-      <p>A Community of Strangers. Connections That Last.</p>
-    </div>
+<!-- ── Top Bar ─────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-icon">🌿</div>
+  <div>
+    <h1>Miles Before WiFi — Brochure Generator</h1>
+    <p>Fill in the details, generate, and download your event brochure.</p>
   </div>
+</div>
 
-  <nav>
-    <a href="#about">About</a>
-    <a href="#activities">Activities</a>
-    <a href="#trips">Trips</a>
-    <a href="#safety">Safety</a>
-    <a href="#join">Join</a>
-  </nav>
-</header>
+<!-- ── Main Layout ─────────────────────────────────────── -->
+<div class="layout">
 
-<section class="hero">
-  <div class="hero-content">
-    <span class="badge">Meet • Travel • Play • Connect</span>
-    <h2>Turn strangers into travel friends.</h2>
-    <p>
-      Join meetups, trips, board games, campfire conversations and fun community activities
-      built for real-world friendships beyond WiFi.
-    </p>
-    <div class="hero-actions">
-      <a href="#join" class="btn primary">Join Community</a>
-      <a href="#activities" class="btn secondary">Explore Activities</a>
+  <!-- FORM PANEL -->
+  <aside class="form-panel">
+    <h2>Event Details</h2>
+
+    <div class="field">
+      <label>Event / Trip Name</label>
+      <input type="text" id="f-name" maxlength="80"
+        value="Good Vibes. Great Connections." placeholder="Event name..." />
     </div>
-  </div>
-  <div class="hero-logo-wrap">
-    <img src="assets/logo.jpg" alt="Miles Before WiFi Logo" class="hero-logo" />
-  </div>
-</section>
 
-<section id="about" class="section">
-  <h2>About Us</h2>
-  <p>
-    Miles Before WiFi is a social travel and activity community where people meet new friends,
-    explore places together and create meaningful memories through shared experiences.
-  </p>
-</section>
-
-<section id="activities" class="section">
-  <h2>What We Do</h2>
-  <div class="cards">
-    <div class="card">
-      <h3>🤝 Meet New Friends</h3>
-      <p>Friendly meetups for conversations, networking and real connections.</p>
+    <div class="field">
+      <label>Short Description</label>
+      <textarea id="f-desc" rows="3" maxlength="240"
+        placeholder="A short, punchy description...">Join us for a fun social meetup with games, conversations, new friends and unforgettable community moments.</textarea>
+      <div class="hint">Max 240 characters</div>
     </div>
-    <div class="card">
-      <h3>🌄 Trips & Travel</h3>
-      <p>Weekend trips, nature escapes, camping, trekking and city experiences.</p>
+
+    <div class="field">
+      <label>Date</label>
+      <input type="text" id="f-date" maxlength="40" value="Sunday, 28 July 2026" />
     </div>
-    <div class="card">
-      <h3>🎲 Board Games</h3>
-      <p>Game nights, fun challenges and indoor social activities.</p>
+
+    <div class="field">
+      <label>Time</label>
+      <input type="text" id="f-time" maxlength="40" value="5:00 PM – 8:00 PM" />
     </div>
-  </div>
-</section>
 
-<section id="trips" class="section trip-section">
-  <h2>Upcoming Experiences</h2>
-  <div class="trip-list">
-    <div>
-      <h3>Weekend Travel</h3>
-      <p>Short trips with verified members and clear itineraries.</p>
+    <div class="field">
+      <label>Venue / Destination</label>
+      <input type="text" id="f-venue" maxlength="80" value="Coimbatore Cafe Meetup" />
     </div>
-    <div>
-      <h3>Social Meetups</h3>
-      <p>Cafe meets, city walks and community bonding sessions.</p>
+
+    <div class="field">
+      <label>Price / Entry Fee</label>
+      <input type="text" id="f-price" maxlength="30" value="₹299" />
     </div>
-    <div>
-      <h3>Fun Activities</h3>
-      <p>Board games, team games, icebreakers and group challenges.</p>
+
+    <div class="field">
+      <label>Available Seats</label>
+      <input type="text" id="f-seats" maxlength="30" value="30 Seats Only" />
     </div>
-  </div>
-</section>
 
-<section id="safety" class="section">
-  <h2>Safety First</h2>
-  <div class="safety-grid">
-    <p>✅ Community guidelines</p>
-    <p>✅ Respectful behaviour policy</p>
-    <p>✅ Emergency contact collection</p>
-    <p>✅ Clear trip rules and payment policy</p>
-  </div>
-</section>
+    <div class="field">
+      <label>Contact Number</label>
+      <input type="text" id="f-contact" maxlength="30" value="+91 98765 43210" />
+    </div>
 
-<section id="join" class="section join-section">
-  <h2>Join Miles Before WiFi</h2>
-  <p>Be part of our next meetup, trip or fun activity.</p>
+    <div class="field">
+      <label>Instagram ID</label>
+      <input type="text" id="f-insta" maxlength="40" value="@milesbeforewifi" />
+    </div>
 
-  <form onsubmit="submitForm(event)">
-    <input type="text" placeholder="Full Name" required />
-    <input type="email" placeholder="Email Address" required />
-    <input type="tel" placeholder="WhatsApp Number" />
-    <select>
-      <option>Interested In</option>
-      <option>Meetups</option>
-      <option>Trips</option>
-      <option>Board Games</option>
-      <option>All Activities</option>
-    </select>
-    <textarea placeholder="Tell us about yourself"></textarea>
-    <button type="submit">Submit Interest</button>
-  </form>
-</section>
+    <div class="field">
+      <label>Highlights</label>
+      <textarea id="f-highlights" rows="5" placeholder="One highlight per line...">Board Games Night
+New Friendships
+Chill Conversations
+Community Vibes
+Surprise Activities</textarea>
+      <div class="hint">One item per line. Max 6 shown.</div>
+    </div>
 
-<footer>
-  <p>© 2026 Miles Before WiFi. All Rights Reserved.</p>
-  <p>Instagram: @milesbeforewifi | Email: hello@milesbeforewifi.com</p>
-</footer>
+    <hr class="divider" />
+    <h2>Branding</h2>
 
-<script src="script.js"></script>
+    <!-- Banner Upload -->
+    <div class="field">
+      <label>Banner / Hero Image</label>
+      <div class="upload-box" id="banner-box" onclick="document.getElementById('f-banner').click()">
+        <label class="upload-label" for="f-banner">
+          <span>🖼️</span> Click to upload banner
+        </label>
+        <input type="file" id="f-banner" accept="image/*" onchange="previewImage(this,'banner-preview')" />
+        <img id="banner-preview" class="upload-preview" alt="Banner preview" />
+      </div>
+    </div>
+
+    <!-- Logo Upload -->
+    <div class="field">
+      <label>Logo Image</label>
+      <div class="upload-box" id="logo-box" onclick="document.getElementById('f-logo').click()">
+        <label class="upload-label" for="f-logo">
+          <span>🪪</span> Click to upload logo
+        </label>
+        <input type="file" id="f-logo" accept="image/*" onchange="previewImage(this,'logo-preview')" />
+        <img id="logo-preview" class="upload-preview" alt="Logo preview" />
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <button class="btn-generate" onclick="generateBrochure()">
+      🎨 Generate Brochure
+    </button>
+  </aside>
+
+  <!-- PREVIEW PANEL -->
+  <main class="preview-panel">
+    <div class="panel-header" style="max-width:540px;">
+      <h2>Preview</h2>
+      <div class="dl-btns">
+        <button class="btn-dl png" onclick="downloadPNG()">⬇ PNG</button>
+        <button class="btn-dl pdf" onclick="downloadPDF()">⬇ PDF</button>
+      </div>
+    </div>
+
+    <!-- Empty state (shown before generate) -->
+    <div class="empty-state" id="empty-state">
+      <div class="icon">🗺️</div>
+      <p>Fill in the details on the left<br>and click <strong>Generate Brochure</strong>.</p>
+    </div>
+
+    <!-- The actual brochure -->
+    <div id="brochure">
+
+      <!-- Header -->
+      <div class="br-header">
+        <div class="br-logo" id="br-logo-wrap">🌿</div>
+        <div class="br-brand">
+          <div class="br-brand-name">Miles Before WiFi</div>
+          <div class="br-brand-tag">✦ Community &nbsp;·&nbsp; Travel &nbsp;·&nbsp; Connection ✦</div>
+        </div>
+      </div>
+
+      <!-- Hero image area -->
+      <div id="br-hero-area">
+        <div class="br-hero-placeholder" id="br-hero-placeholder">🏕️</div>
+      </div>
+
+      <!-- Body -->
+      <div class="br-body">
+
+        <!-- Headline -->
+        <div class="br-headline" id="br-headline">Good Vibes. Great Connections.</div>
+
+        <!-- Description -->
+        <div class="br-desc" id="br-desc">Join us for a fun social meetup with games, conversations, new friends and unforgettable community moments.</div>
+
+        <!-- Details grid -->
+        <div class="br-details">
+          <div class="br-detail-item">
+            <div class="detail-label">📅 Date</div>
+            <div class="detail-val" id="br-date">Sunday, 28 July 2026</div>
+          </div>
+          <div class="br-detail-item">
+            <div class="detail-label">🕔 Time</div>
+            <div class="detail-val" id="br-time">5:00 PM – 8:00 PM</div>
+          </div>
+          <div class="br-detail-item" style="grid-column: 1 / -1;">
+            <div class="detail-label">📍 Venue</div>
+            <div class="detail-val" id="br-venue">Coimbatore Cafe Meetup</div>
+          </div>
+        </div>
+
+        <!-- Highlights -->
+        <div class="br-section-title">Highlights</div>
+        <div class="br-highlights" id="br-highlights">
+          <!-- Injected by JS -->
+        </div>
+
+        <!-- Price + QR -->
+        <div class="br-price-qr">
+          <div class="br-price-card">
+            <div class="price-label">Entry Fee</div>
+            <div class="price-val" id="br-price">₹299</div>
+            <div class="price-seats" id="br-seats">🪑 30 Seats Only</div>
+          </div>
+          <div class="br-qr-block">
+            <div class="qr-icon">▦</div>
+            <div class="qr-label">Scan to Book</div>
+          </div>
+        </div>
+
+      </div><!-- /br-body -->
+
+      <!-- Footer -->
+      <div class="br-footer">
+        <div class="br-footer-contact">📞 <span id="br-contact">+91 98765 43210</span></div>
+        <div class="br-footer-insta">📸 <span id="br-insta">@milesbeforewifi</span></div>
+      </div>
+
+    </div><!-- /#brochure -->
+  </main>
+
+</div><!-- /.layout -->
+
+<script>
+  /* ============================================================
+     IMAGE PREVIEW HELPER
+  ============================================================ */
+  function previewImage(input, previewId) {
+    const preview = document.getElementById(previewId);
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  /* ============================================================
+     READ FILE AS DATA-URL (Promise)
+  ============================================================ */
+  function readFile(input) {
+    return new Promise(resolve => {
+      if (!input.files || !input.files[0]) { resolve(null); return; }
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target.result);
+      reader.readAsDataURL(input.files[0]);
+    });
+  }
+
+  /* ============================================================
+     TRIM TEXT to maxLen, appending "…" if needed
+  ============================================================ */
+  function trim(text, maxLen) {
+    if (!text) return '';
+    text = text.trim();
+    return text.length > maxLen ? text.slice(0, maxLen - 1) + '…' : text;
+  }
+
+  /* ============================================================
+     GENERATE BROCHURE
+  ============================================================ */
+  async function generateBrochure() {
+    // Read values
+    const name     = trim(document.getElementById('f-name').value,    80);
+    const desc     = trim(document.getElementById('f-desc').value,    240);
+    const date     = trim(document.getElementById('f-date').value,    40);
+    const time     = trim(document.getElementById('f-time').value,    40);
+    const venue    = trim(document.getElementById('f-venue').value,   80);
+    const price    = trim(document.getElementById('f-price').value,   30);
+    const seats    = trim(document.getElementById('f-seats').value,   30);
+    const contact  = trim(document.getElementById('f-contact').value, 30);
+    const insta    = trim(document.getElementById('f-insta').value,   40);
+    const hlRaw    = document.getElementById('f-highlights').value;
+
+    // Parse highlights (max 6)
+    const highlights = hlRaw
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+
+    // Images
+    const bannerData = await readFile(document.getElementById('f-banner'));
+    const logoData   = await readFile(document.getElementById('f-logo'));
+
+    // ── Inject into brochure ────────────────────────────────
+    document.getElementById('br-headline').textContent = name     || 'Event Name';
+    document.getElementById('br-desc').textContent     = desc     || '';
+    document.getElementById('br-date').textContent     = date     || '—';
+    document.getElementById('br-time').textContent     = time     || '—';
+    document.getElementById('br-venue').textContent    = venue    || '—';
+    document.getElementById('br-price').textContent    = price    || 'Free';
+    document.getElementById('br-seats').textContent    = '🪑 ' + (seats || '');
+    document.getElementById('br-contact').textContent  = contact  || '—';
+    document.getElementById('br-insta').textContent    = insta    || '—';
+
+    // Logo
+    const logoWrap = document.getElementById('br-logo-wrap');
+    if (logoData) {
+      logoWrap.innerHTML = `<img src="${logoData}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" />`;
+    } else {
+      logoWrap.innerHTML = '🌿';
+    }
+
+    // Banner hero
+    const heroArea = document.getElementById('br-hero-area');
+    if (bannerData) {
+      heroArea.innerHTML = `
+        <div class="br-hero-wrap">
+          <img src="${bannerData}" alt="Banner" />
+          <div class="br-hero-overlay"></div>
+        </div>`;
+    } else {
+      heroArea.innerHTML = `<div class="br-hero-placeholder" id="br-hero-placeholder">🏕️</div>`;
+    }
+
+    // Highlights
+    const hlContainer = document.getElementById('br-highlights');
+    hlContainer.innerHTML = '';
+    if (highlights.length === 0) {
+      hlContainer.innerHTML = '<div style="font-size:.8rem;color:#bbb;font-style:italic;">No highlights added.</div>';
+    } else {
+      highlights.forEach((hl, i) => {
+        const div = document.createElement('div');
+        div.className = 'br-highlight-item';
+        div.innerHTML = `<div class="hl-dot">${i + 1}</div><div>${hl}</div>`;
+        hlContainer.appendChild(div);
+      });
+    }
+
+    // Show brochure, hide empty state
+    document.getElementById('empty-state').style.display = 'none';
+    const brochure = document.getElementById('brochure');
+    brochure.style.display = 'block';
+
+    // Scroll preview into view on mobile
+    brochure.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ============================================================
+     LIBRARY CHECK
+  ============================================================ */
+  function checkLibrary(name, obj) {
+    if (!obj) {
+      alert(`⚠️ The "${name}" library failed to load.\n\nThis can happen if you're offline or if the CDN is blocked.\n\nTip: Open the file while connected to the internet, or download the library and reference it locally.`);
+      return false;
+    }
+    return true;
+  }
+
+  /* ============================================================
+     DOWNLOAD AS PNG
+  ============================================================ */
+  async function downloadPNG() {
+    const brochure = document.getElementById('brochure');
+    if (brochure.style.display === 'none') {
+      alert('Please generate the brochure first!');
+      return;
+    }
+    if (!checkLibrary('html2canvas', window.html2canvas)) return;
+
+    try {
+      const canvas = await html2canvas(brochure, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#F5EDD8',
+        logging: false
+      });
+      const link = document.createElement('a');
+      link.download = 'miles-before-wifi-brochure.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      alert('PNG download failed.\n\nError: ' + err.message);
+      console.error(err);
+    }
+  }
+
+  /* ============================================================
+     DOWNLOAD AS PDF
+  ============================================================ */
+  async function downloadPDF() {
+    const brochure = document.getElementById('brochure');
+    if (brochure.style.display === 'none') {
+      alert('Please generate the brochure first!');
+      return;
+    }
+    if (!checkLibrary('html2canvas', window.html2canvas)) return;
+    if (!checkLibrary('jsPDF', window.jspdf?.jsPDF)) return;
+
+    try {
+      const canvas = await html2canvas(brochure, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#F5EDD8',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+
+      // A4 portrait (mm)
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW  = pdf.internal.pageSize.getWidth();
+      const pageH  = pdf.internal.pageSize.getHeight();
+
+      // Scale image to fit A4 width with padding
+      const padding = 10;
+      const usableW = pageW - padding * 2;
+      const ratio   = canvas.height / canvas.width;
+      const imgH    = usableW * ratio;
+
+      // If taller than A4, scale down to fit
+      if (imgH > pageH - padding * 2) {
+        const scaledH = pageH - padding * 2;
+        const scaledW = scaledH / ratio;
+        const xOffset = (pageW - scaledW) / 2;
+        pdf.addImage(imgData, 'PNG', xOffset, padding, scaledW, scaledH);
+      } else {
+        const yOffset = (pageH - imgH) / 2;
+        pdf.addImage(imgData, 'PNG', padding, yOffset, usableW, imgH);
+      }
+
+      pdf.save('miles-before-wifi-brochure.pdf');
+    } catch (err) {
+      alert('PDF download failed.\n\nError: ' + err.message);
+      console.error(err);
+    }
+  }
+
+  /* ============================================================
+     AUTO-GENERATE ON LOAD (so preview isn't empty)
+  ============================================================ */
+  window.addEventListener('DOMContentLoaded', generateBrochure);
+</script>
+
 </body>
 </html>
